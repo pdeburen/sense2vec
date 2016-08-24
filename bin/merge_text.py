@@ -52,6 +52,11 @@ def iter_comments(loc):
         for i, line in enumerate(file_):
             yield ujson.loads(line)['body']
 
+def iter_presidents(loc):
+    with open(loc,'r',encoding='utf-8') as file_:
+        for line in file_:
+            yield line
+
 
 pre_format_re = re.compile(r'^[\`\*\~]')
 post_format_re = re.compile(r'[\`\*\~]$')
@@ -91,7 +96,7 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
     #        file_.write(transform_doc(nlp.pipe(strip_meta(text))))
 
     with open(out_loc, 'w', encoding='utf8') as file_:
-        texts = (strip_meta(text) for text in iter_comments(input_))
+        texts = (strip_meta(text) for text in iter_presidents(input_))
         #texts = strip_meta(infile_.read())
         texts = (text for text in texts if text.strip())
         for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
