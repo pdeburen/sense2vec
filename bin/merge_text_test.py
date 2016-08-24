@@ -102,6 +102,8 @@ def transform_doc(doc):
             return ''
     except UnicodeDecodeError as e:
         print(e,list(doc.noun_chunks))
+    except IndexError as i:
+        print(i,list(doc.noun_chunks))
 
 
 #def transform_docs_blog(doc):
