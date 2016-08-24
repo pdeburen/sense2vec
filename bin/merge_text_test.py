@@ -108,11 +108,11 @@ def transform_docs_new(doc):
         if len(np) > 1:
             # Merge the tokens, e.g. good_ideas
             np.merge(np.root.tag_, np.text, np.root.ent_type_)
-        # Iterate over named entities
-        for ent in doc.ents:
-            if len(ent) > 1:
-                # Merge them into single tokens
-                ent.merge(ent.root.tag_, ent.text, ent.label_)
+    # Iterate over named entities
+    for ent in doc.ents:
+        if len(ent) > 1:
+            # Merge them into single tokens
+            ent.merge(ent.root.tag_, ent.text, ent.label_)
     token_strings = []
     for token in doc:
         text = token.text.replace(' ', '_')
