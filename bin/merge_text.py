@@ -6,6 +6,7 @@ from toolz import partition
 from os import path
 import os
 import re
+import fileinput
 
 import spacy.en
 from preshed.counter import PreshCounter
@@ -52,7 +53,7 @@ def iter_comments(loc):
         for i, line in enumerate(file_):
             yield ujson.loads(line)['body']
 
-def iter_presidents(loc):
+def iter_lines(loc):
     with open(loc,'r',encoding='utf-8') as file_:
         for line in file_:
             yield line
@@ -91,14 +92,14 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
     print('Batch', batch_id)
     nlp = spacy.en.English()
     nlp.matcher = None
-    #with io.open(out_loc, 'w', encoding='utf8') as file_:
-    #    for text in input_:
-    #        file_.write(transform_doc(nlp.pipe(strip_meta(text))))
 
     with open(out_loc, 'w', encoding='utf8') as file_:
-        texts = (strip_meta(text) for text in iter_presidents(input_))
+        texts = (strip_meta(text) for text in input_)
+        print(texts)
+        print(len(texts))
         #texts = strip_meta(infile_.read())
         texts = (text for text in texts if text.strip())
+        print(len(texts))
         for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
             file_.write(transform_doc(doc))
 
@@ -145,14 +146,13 @@ def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000, load_parse
     #    jobs = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
     #    do_work = load_and_transform
     #else:
-    jobs = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
+    textfiles = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
     if n_workers >= 2:
-        jobs = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
-        #jobs = partition(200000, iter_comments(in_loc))
+        jobs = partition(200000, fileinput.FileInput(textfiles,openhook=fileinput.hook_encoded('utf-8')))
         do_work = parse_and_transform
         parallelize(do_work, enumerate(jobs), n_workers, [out_dir, n_threads, batch_size],backend='multiprocessing')
     else:
-        parse_and_transform(0, jobs, out_dir, n_threads, batch_size)
+        parse_and_transform(0, fileinput.FileInput(textfiles,openhook=fileinput.hook_encoded('utf-8')), out_dir, n_threads, batch_size)
 
 
 if __name__ == '__main__':
