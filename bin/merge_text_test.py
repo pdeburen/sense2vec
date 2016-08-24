@@ -53,7 +53,9 @@ url_re = re.compile(r'\[([^]]+)\]\(%%URL\)')
 link_re = re.compile(r'\[([^]]+)\]\(https?://[^\)]+\)')
 def strip_meta(text):
     text = link_re.sub(r'\1', text)
-    text = text.replace('&gt;', '>').replace('&lt;', '<')
+    # Strip all html-tags
+    text = re.sub('<[^<]+?>', '', text)
+    text = text.replace('&gt;', '>').replace('&lt;', '<').replace('&nbsp;',' ')
     text = pre_format_re.sub('', text)
     text = post_format_re.sub('', text)
     return text
