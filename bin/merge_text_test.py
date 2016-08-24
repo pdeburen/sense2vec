@@ -68,7 +68,7 @@ def strip_meta(text):
     return text
 
 
-def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
+def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,spec_ents_only):
     out_loc = path.join(out_dir, os.path.split(input_)[1])
     if path.exists(out_loc):
         return None
@@ -81,31 +81,30 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
         #texts = strip_meta(infile_.read())
         texts = (text for text in texts if text.strip())
         for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
-            file_.write(transform_doc(doc))
+            file_.write(transform_doc(doc,spec_ents_only))
 
-def transform_doc(doc):
-    for ent in doc.ents:
-        ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
-    try:
-        for np in list(doc.noun_chunks):
-            print('in noun_chunk loop')
-            while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
-                print('len np',len(np))
-                np = np[1:]
-                print('np',np)
-            np.merge(np.root.tag_, np.text, np.root.ent_type_)
-        strings = []
-        for sent in doc.sents:
-            if sent.text.strip():
-                strings.append(' '.join(represent_word(w) for w in sent if not w.is_space))
-        if strings:
-            return '\n'.join(strings) + '\n'
-        else:
-            return ''
-    except UnicodeDecodeError as e:
-        print(e,list(doc.noun_chunks))
-    except IndexError as i:
-        print(i,list(doc.noun_chunks))
+def transform_doc(doc,spec_ents_only):
+    if spec_ents_only:
+        for ent in doc.ents:
+            if ent.label_ in LABELS.keys():
+                ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
+    else:
+        for ent in doc.ents:
+            ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
+
+    for np in list(doc.noun_chunks):
+        while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
+            np = np[1:]
+        np.merge(np.root.tag_, np.text, np.root.ent_type_)
+    strings = []
+    for sent in doc.sents:
+        if sent.text.strip():
+            strings.append(' '.join(represent_word(w) for w in sent if not w.is_space))
+    if strings:
+        return '\n'.join(strings) + '\n'
+    else:
+        return ''
+
 
 
 #def transform_docs_blog(doc):
@@ -143,21 +142,22 @@ def represent_word(word):
     out_dir=("Location of output directory"),
     n_workers=("Number of workers", "option", "n", int),
     n_threads=("Number of threads per process", "option", "t", int),
-    batch_size=("Number of texts to accumulate in a buffer", "option", "b", int)
+    batch_size=("Number of texts to accumulate in a buffer", "option", "b", int),
+    spec_ents_only=("Flag if only specific entities should be used","flag","s",int)
 )
-def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000):
+def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000,spec_ents_only=0):
     if not path.exists(out_dir):
         path.join(out_dir)
     if path.isfile(in_loc):
-        parse_and_transform(0,in_loc,out_dir,n_threads=1,batch_size=10000)
+        parse_and_transform(0,in_loc,out_dir,n_threads=1,batch_size=10000,spec_ents_only=spec_ents_only)
     else:
         textfiles = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
         if n_workers >= 2:
             #jobs = partition(200000, textfiles)
             do_work = parse_and_transform
-            parallelize(do_work, enumerate(textfiles), n_workers, [out_dir, n_threads, batch_size],backend='multiprocessing')
+            parallelize(do_work, enumerate(textfiles), n_workers, [out_dir, n_threads, batch_size,spec_ents_only],backend='multiprocessing')
         else:
-            [parse_and_transform(0, file, out_dir, n_threads, batch_size) for file in textfiles]
+            [parse_and_transform(0, file, out_dir, n_threads, batch_size, spec_ents_only) for file in textfiles]
 
 
 if __name__ == '__main__':
