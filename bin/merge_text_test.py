@@ -42,6 +42,11 @@ LABELS = {
     'CARDINAL': 'CARDINAL'
 }
 
+def parallelize(func, iterator, n_jobs, extra, backend='multiprocessing'):
+    extra = tuple(extra)
+    return Parallel(n_jobs=n_jobs, backend=backend)(delayed(func)(*(item + extra))
+                    for item in iterator)
+
 def iter_lines(loc):
     with open(loc,'r',encoding='utf-8') as file_:
         for line in file_:
@@ -51,12 +56,11 @@ pre_format_re = re.compile(r'^[\`\*\~]')
 post_format_re = re.compile(r'[\`\*\~]$')
 url_re = re.compile(r'\[([^]]+)\]\(%%URL\)')
 link_re = re.compile(r'\[([^]]+)\]\(https?://[^\)]+\)')
-clean_re =re.compile('<.*?>')
+#clean_re =re.compile('<.*?>')
 
 def strip_meta(text):
     text = link_re.sub(r'\1', text)
-    # Strip all html-tags
-    text = re.sub(clean_re, '!!', text)
+    #text = re.sub(clean_re, '!!', text)
     text = text.replace('&gt;', '>').replace('&lt;', '<').replace('&nbsp;',' ')
     text = pre_format_re.sub('', text)
     text = post_format_re.sub('', text)
@@ -105,10 +109,20 @@ def represent_word(word):
     return text + '|' + tag
 
 @plac.annotations(
-    in_loc=("Location of input file"),
-    out_dir=("Location of input file"),
+    in_loc=("Location of input directory"),
+    out_dir=("Location of output directory"),
 )
-def main(in_loc,out_dir):
+def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000):
+    #if not path.exists(out_dir):
+    #    path.join(out_dir)
+    #textfiles = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
+    #if n_workers >= 2:
+    #    #jobs = partition(200000, textfiles)
+    #    do_work = parse_and_transform
+    #    parallelize(do_work, textfiles, n_workers, [out_dir, n_threads, batch_size],backend='multiprocessing')
+    #else:
+    #    [parse_and_transform(0, file, out_dir, n_threads, batch_size) for file in textfiles]
+
     parse_and_transform(0,in_loc,out_dir,n_threads=1,batch_size=10000)
 
 if __name__ == '__main__':
