@@ -48,7 +48,7 @@ def parallelize(func, iterator, n_jobs, extra, backend='multiprocessing'):
                     for item in iterator)
 
 def iter_lines(loc):
-    with open(loc,'rb') as file_:
+    with open(loc,'r',encoding='utf8') as file_:
         for line in file_:
             yield line
 
@@ -59,11 +59,11 @@ link_re = re.compile(r'\[([^]]+)\]\(https?://[^\)]+\)')
 #clean_re =re.compile('<.*?>')
 
 def strip_meta(text):
-    text = link_re.sub(r'\1', text)
-    #text = re.sub(clean_re, '!!', text)
-    text = text.replace('&gt;', '>').replace('&lt;', '<').replace('&nbsp;',' ')
-    text = pre_format_re.sub('', text)
-    text = post_format_re.sub('', text)
+    #text = link_re.sub(r'\1', text)
+    ##text = re.sub(clean_re, '!!', text)
+    #text = text.replace('&gt;', '>').replace('&lt;', '<').replace('&nbsp;',' ')
+    #text = pre_format_re.sub('', text)
+    #text = post_format_re.sub('', text)
     return text
 
 
