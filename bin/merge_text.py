@@ -149,6 +149,7 @@ def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000, load_parse
     textfiles = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
     if n_workers >= 2:
         jobs = partition(200000, fileinput.FileInput(textfiles,openhook=fileinput.hook_encoded('utf-8')))
+        print(jobs)
         do_work = parse_and_transform
         parallelize(do_work, enumerate(jobs), n_workers, [out_dir, n_threads, batch_size],backend='multiprocessing')
     else:
