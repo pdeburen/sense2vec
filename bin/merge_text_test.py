@@ -80,15 +80,16 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
         #texts = strip_meta(infile_.read())
         texts = (text for text in texts if text.strip())
         for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
-            file_.write(transform_docs_new(doc))
+            file_.write(transform_doc(doc))
 
 def transform_doc(doc):
     for ent in doc.ents:
         ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
-    for np in doc.noun_chunks:
-        while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
-            np = np[1:]
-        np.merge(np.root.tag_, np.text, np.root.ent_type_)
+    if list(doc.noun_chunks):
+        for np in doc.noun_chunks:
+            while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
+                np = np[1:]
+            np.merge(np.root.tag_, np.text, np.root.ent_type_)
     strings = []
     for sent in doc.sents:
         if sent.text.strip():
@@ -99,26 +100,26 @@ def transform_doc(doc):
         return ''
 
 
-def transform_docs_new(doc):
-    # Iterate over base NPs, e.g. "all their good ideas"
-    for np in doc.noun_chunks:
-        # Only keep adjectives and nouns, e.g. "good ideas"
-        while len(np) > 1 and np[0].dep_ not in ('amod', 'compound'):
-            np = np[1:]
-        if len(np) > 1:
-            # Merge the tokens, e.g. good_ideas
-            np.merge(np.root.tag_, np.text, np.root.ent_type_)
-    # Iterate over named entities
-    for ent in doc.ents:
-        if len(ent) > 1:
-            # Merge them into single tokens
-            ent.merge(ent.root.tag_, ent.text, ent.label_)
-    token_strings = []
-    for token in doc:
-        text = token.text.replace(' ', '_')
-        tag = token.ent_type_ or token.pos_
-        token_strings.append('%s|%s' % (text, tag))
-    return ' '.join(token_strings)
+#def transform_docs_blog(doc):
+#    # Iterate over base NPs, e.g. "all their good ideas"
+#    for np in doc.noun_chunks:
+#        # Only keep adjectives and nouns, e.g. "good ideas"
+#        while len(np) > 1 and np[0].dep_ not in ('amod', 'compound'):
+#            np = np[1:]
+#        if len(np) > 1:
+#            # Merge the tokens, e.g. good_ideas
+#            np.merge(np.root.tag_, np.text, np.root.ent_type_)
+#    # Iterate over named entities
+#    for ent in doc.ents:
+#        if len(ent) > 1:
+#            # Merge them into single tokens
+#            ent.merge(ent.root.tag_, ent.text, ent.label_)
+#    token_strings = []
+#    for token in doc:
+#        text = token.text.replace(' ', '_')
+#        tag = token.ent_type_ or token.pos_
+#        token_strings.append('%s|%s' % (text, tag))
+#    return ' '.join(token_strings)
 
 def represent_word(word):
     if word.like_url:
