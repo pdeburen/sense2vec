@@ -1,4 +1,5 @@
 from __future__ import print_function, unicode_literals, division
+# -*- coding: utf-8 -*-
 import io
 import bz2
 import logging
@@ -59,11 +60,11 @@ link_re = re.compile(r'\[([^]]+)\]\(https?://[^\)]+\)')
 #clean_re =re.compile('<.*?>')
 
 def strip_meta(text):
-    #text = link_re.sub(r'\1', text)
-    ##text = re.sub(clean_re, '!!', text)
-    #text = text.replace('&gt;', '>').replace('&lt;', '<').replace('&nbsp;',' ')
-    #text = pre_format_re.sub('', text)
-    #text = post_format_re.sub('', text)
+    text = link_re.sub(r'\1', text)
+    #text = re.sub(clean_re, '!!', text)
+    text = text.replace('&gt;', '>').replace('&lt;', '<').replace('&nbsp;',' ')
+    text = pre_format_re.sub('', text)
+    text = post_format_re.sub('', text)
     return text
 
 
