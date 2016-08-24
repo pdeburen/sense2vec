@@ -118,7 +118,7 @@ def transform_docs_new(doc):
         text = token.text.replace(' ', '_')
         tag = token.ent_type_ or token.pos_
         token_strings.append('%s|%s' % (text, tag))
-    yield ' '.join(token_strings)
+    return ' '.join(token_strings)
 
 def represent_word(word):
     if word.like_url:
