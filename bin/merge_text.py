@@ -94,7 +94,7 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
     nlp.matcher = None
 
     with open(out_loc, 'w', encoding='utf8') as file_:
-        texts = (strip_meta(text) for text in input_)
+        texts = (strip_meta(text) for text in iter_lines(input_))
         print(texts)
         print(len(texts))
         #texts = strip_meta(infile_.read())
@@ -148,12 +148,11 @@ def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000, load_parse
     #else:
     textfiles = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
     if n_workers >= 2:
-        jobs = partition(200000, fileinput.FileInput(textfiles,openhook=fileinput.hook_encoded('utf-8')))
-        print(jobs)
+        jobs = partition(200000, textfiles)
         do_work = parse_and_transform
         parallelize(do_work, enumerate(jobs), n_workers, [out_dir, n_threads, batch_size],backend='multiprocessing')
     else:
-        parse_and_transform(0, fileinput.FileInput(textfiles,openhook=fileinput.hook_encoded('utf-8')), out_dir, n_threads, batch_size)
+        [parse_and_transform(0, file, out_dir, n_threads, batch_size) for file in textfiles]
 
 
 if __name__ == '__main__':
