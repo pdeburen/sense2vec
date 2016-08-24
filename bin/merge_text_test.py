@@ -109,21 +109,23 @@ def represent_word(word):
     return text + '|' + tag
 
 @plac.annotations(
-    in_loc=("Location of input directory"),
+    in_loc=("Location of input directory or input file"),
     out_dir=("Location of output directory"),
 )
 def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000):
-    #if not path.exists(out_dir):
-    #    path.join(out_dir)
-    #textfiles = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
-    #if n_workers >= 2:
-    #    #jobs = partition(200000, textfiles)
-    #    do_work = parse_and_transform
-    #    parallelize(do_work, textfiles, n_workers, [out_dir, n_threads, batch_size],backend='multiprocessing')
-    #else:
-    #    [parse_and_transform(0, file, out_dir, n_threads, batch_size) for file in textfiles]
+    if not path.exists(out_dir):
+        path.join(out_dir)
+    if path.isfile(in_loc):
+        parse_and_transform(0,in_loc,out_dir,n_threads=1,batch_size=10000)
+    else:
+        textfiles = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
+        if n_workers >= 2:
+            #jobs = partition(200000, textfiles)
+            do_work = parse_and_transform
+            parallelize(do_work, textfiles, n_workers, [out_dir, n_threads, batch_size],backend='multiprocessing')
+        else:
+            [parse_and_transform(0, file, out_dir, n_threads, batch_size) for file in textfiles]
 
-    parse_and_transform(0,in_loc,out_dir,n_threads=1,batch_size=10000)
 
 if __name__ == '__main__':
     plac.call(main)
