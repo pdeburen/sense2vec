@@ -41,10 +41,10 @@ LABELS = {
     'CARDINAL': 'CARDINAL'
 }
 
-
-def parallelize(func, iterator, n_jobs, extra):
+def parallelize(func, iterator, n_jobs, extra, backend='multiprocessing'):
     extra = tuple(extra)
-    return Parallel(n_jobs=n_jobs)(delayed(func)(*(item + extra)) for item in iterator)
+    return Parallel(n_jobs=n_jobs, backend=backend)(delayed(func)(*(item + extra))
+                    for item in iterator)
 
 
 def iter_comments(loc):
@@ -79,16 +79,22 @@ def load_and_transform(batch_id, in_loc, out_dir):
                 out_file.write(transform_doc(doc)) 
 
 
-def parse_and_transform(batch_id, input_, out_dir):
+def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
     out_loc = path.join(out_dir, '%d.txt' % batch_id)
     if path.exists(out_loc):
         return None
     print('Batch', batch_id)
     nlp = spacy.en.English()
     nlp.matcher = None
-    with io.open(out_loc, 'w', encoding='utf8') as file_:
-        for text in input_:
-            file_.write(transform_doc(nlp(strip_meta(text))))
+    #with io.open(out_loc, 'w', encoding='utf8') as file_:
+    #    for text in input_:
+    #        file_.write(transform_doc(nlp.pipe(strip_meta(text))))
+    with open(input_,'w',encoding='utf8') as infile_:
+        with open(out_loc, 'w', encoding='utf8') as file_:
+            texts = (strip_meta(text) for text in infile_.read())
+            texts = (text for text in texts if text.strip())
+            for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
+                file_.write(transform_doc(doc))
 
 
 def transform_doc(doc):
@@ -122,19 +128,25 @@ def represent_word(word):
     in_loc=("Location of input file"),
     out_dir=("Location of input file"),
     n_workers=("Number of workers", "option", "n", int),
-    load_parses=("Load parses from binary", "flag", "b"),
+    #load_parses=("Load parses from binary", "flag", "b"),
+    n_threads=("Number of threads per process", "option", "t", int),
+    batch_size=("Number of texts to accumulate in a buffer", "option", "b", int)
 )
-def main(in_loc, out_dir, n_workers=4, load_parses=False):
+def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000, load_parses=False):
     if not path.exists(out_dir):
         path.join(out_dir)
-    if load_parses:
+    #if load_parses:
+    #    jobs = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
+    #    do_work = load_and_transform
+    #else:
+    if n_workers >= 2:
         jobs = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
-        do_work = load_and_transform
-    else:
-        jobs = partition(200000, iter_comments(in_loc))
+        #jobs = partition(200000, iter_comments(in_loc))
         do_work = parse_and_transform
-    parallelize(do_work, enumerate(jobs), n_workers, [out_dir])
- 
+        parallelize(do_work, enumerate(jobs), n_workers, [out_dir, n_threads, batch_size],backend='multiprocessing')
+    else:
+        parse_and_transform(0, iter_comments(in_loc), out_dir, n_threads, batch_size)
+
 
 if __name__ == '__main__':
     plac.call(main)
