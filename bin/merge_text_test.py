@@ -143,9 +143,9 @@ def represent_word(word):
     n_workers=("Number of workers", "option", "n", int),
     n_threads=("Number of threads per process", "option", "t", int),
     batch_size=("Number of texts to accumulate in a buffer", "option", "b", int),
-    spec_ents_only=("Flag if only specific entities should be used","flag","s",int)
+    spec_ents_only=("Flag if only specific entities should be used","flag","s")
 )
-def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000,spec_ents_only=0):
+def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000,spec_ents_only=False):
     if not path.exists(out_dir):
         path.join(out_dir)
     if path.isfile(in_loc):
