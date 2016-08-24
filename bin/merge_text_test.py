@@ -77,10 +77,10 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
 def transform_doc(doc):
     for ent in doc.ents:
         ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
-    for np in doc.noun_chunks:
-        while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
-            np = np[1:]
-        np.merge(np.root.tag_, np.text, np.root.ent_type_)
+    #for np in doc.noun_chunks:
+    #    while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
+    #        np = np[1:]
+    #    np.merge(np.root.tag_, np.text, np.root.ent_type_)
     strings = []
     for sent in doc.sents:
         if sent.text.strip():
