@@ -94,7 +94,7 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
         with open(input_,'r',encoding='utf8') as infile_:
             #texts = (strip_meta(text) for text in infile_.read())
             texts = strip_meta(infile_.read())
-            texts = (text for text in texts if text.strip())
+            #texts = (text for text in texts if text.strip())
             for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
                 file_.write(transform_doc(doc))
 
