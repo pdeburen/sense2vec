@@ -89,8 +89,11 @@ def transform_doc(doc):
     try:
         if list(doc.noun_chunks):
             for np in doc.noun_chunks:
+                print('in noun_chunk loop')
                 while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
+                    print('len np',len(np))
                     np = np[1:]
+                    print('np',np)
                 np.merge(np.root.tag_, np.text, np.root.ent_type_)
         strings = []
         for sent in doc.sents:
