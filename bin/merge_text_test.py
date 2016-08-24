@@ -48,7 +48,7 @@ def parallelize(func, iterator, n_jobs, extra, backend='multiprocessing'):
                     for item in iterator)
 
 def iter_lines(loc):
-    with open(loc,'rb',encoding='utf-8') as file_:
+    with open(loc,'rb') as file_:
         for line in file_:
             yield line
 
