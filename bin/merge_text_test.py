@@ -48,7 +48,7 @@ def parallelize(func, iterator, n_jobs, extra, backend='multiprocessing'):
                     for item in iterator)
 
 def iter_lines(loc):
-    with open(loc,'r',encoding='utf-8') as file_:
+    with open(loc,'rb',encoding='utf-8') as file_:
         for line in file_:
             yield line
 
@@ -86,7 +86,6 @@ def transform_doc(doc):
     for ent in doc.ents:
         ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
     if list(doc.noun_chunks):
-        print(list(doc.noun_chunks))
         for np in doc.noun_chunks:
             while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
                 np = np[1:]
