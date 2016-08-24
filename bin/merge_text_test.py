@@ -49,7 +49,7 @@ def parallelize(func, iterator, n_jobs, extra, backend='multiprocessing'):
                     for item in iterator)
 
 def iter_lines(loc):
-    with open(loc,'r',encoding='utf8') as file_:
+    with open(loc,'r',encoding='utf-8') as file_:
         for line in file_:
             yield line
 
@@ -76,11 +76,10 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
     nlp = spacy.en.English()
     nlp.matcher = None
 
-    with open(out_loc, 'w', encoding='utf8') as file_:
+    with open(out_loc, 'w', encoding='utf-8') as file_:
         texts = (strip_meta(text) for text in iter_lines(input_))
         #texts = strip_meta(infile_.read())
         texts = (text for text in texts if text.strip())
-        texts= (b'Anyhow\0x90').decode(encoding='utf-8')
         for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
             file_.write(transform_doc(doc))
 
