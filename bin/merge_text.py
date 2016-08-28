@@ -81,7 +81,7 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,noun_chun
             file_.write(transform_doc(doc,noun_chunker))
             tokens+=len(doc)
     deltat=(time.time()-timer)/tokens
-    print('tokenized, merged and wrote at %tok/sec'.format(deltat))
+    print('tokenized, merged and wrote at {%f}tok/sec'.format(deltat))
 
 def transform_doc(doc,noun_chunker):
 
