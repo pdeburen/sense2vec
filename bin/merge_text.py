@@ -1,16 +1,15 @@
 from __future__ import print_function, unicode_literals, division
-import io
-import bz2
-import logging
-from toolz import partition
+# -*- coding: utf-8 -*-
+#import io
+#import bz2
+#import logging
+#from toolz import partition
 from os import path
 import os
 import re
-import fileinput
 
 import spacy.en
-from preshed.counter import PreshCounter
-from spacy.tokens.doc import Doc
+
 
 from joblib import Parallel, delayed
 import plac
@@ -47,45 +46,25 @@ def parallelize(func, iterator, n_jobs, extra, backend='multiprocessing'):
     return Parallel(n_jobs=n_jobs, backend=backend)(delayed(func)(*(item + extra))
                     for item in iterator)
 
-
-def iter_comments(loc):
-    with bz2.BZ2File(loc) as file_:
-        for i, line in enumerate(file_):
-            yield ujson.loads(line)['body']
-
 def iter_lines(loc):
     with open(loc,'r',encoding='utf-8') as file_:
         for line in file_:
             yield line
 
-
 pre_format_re = re.compile(r'^[\`\*\~]')
 post_format_re = re.compile(r'[\`\*\~]$')
 url_re = re.compile(r'\[([^]]+)\]\(%%URL\)')
 link_re = re.compile(r'\[([^]]+)\]\(https?://[^\)]+\)')
+
 def strip_meta(text):
     text = link_re.sub(r'\1', text)
-    text = text.replace('&gt;', '>').replace('&lt;', '<')
+    text = text.replace('&gt;', '>').replace('&lt;', '<').replace('&nbsp;',' ')
     text = pre_format_re.sub('', text)
     text = post_format_re.sub('', text)
     return text
 
 
-def load_and_transform(batch_id, in_loc, out_dir):
-    out_loc = path.join(out_dir, '%d.txt' % batch_id)
-    if path.exists(out_loc):
-        return None
-    print('Batch', batch_id)
-    nlp = spacy.en.English(parser=False, tagger=False, matcher=False, entity=False)
-    with io.open(out_loc, 'w', encoding='utf8') as out_file:
-        with io.open(in_loc, 'rb') as in_file:
-            for byte_string in Doc.read_bytes(in_file):
-                doc = Doc(nlp.vocab).from_bytes(byte_string)
-                doc.is_parsed = True
-                out_file.write(transform_doc(doc)) 
-
-
-def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
+def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,noun_chunker):
     out_loc = path.join(out_dir, os.path.split(input_)[1])
     if path.exists(out_loc):
         return None
@@ -93,22 +72,23 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size):
     nlp = spacy.en.English()
     nlp.matcher = None
 
-    with open(out_loc, 'w', encoding='utf8') as file_:
+    with open(out_loc, 'w', encoding='utf-8') as file_:
         texts = (strip_meta(text) for text in iter_lines(input_))
-        print(texts)
-        #texts = strip_meta(infile_.read())
         texts = (text for text in texts if text.strip())
         for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
-            file_.write(transform_doc(doc))
+            file_.write(transform_doc(doc,noun_chunker))
 
+def transform_doc(doc,noun_chunker):
 
-def transform_doc(doc):
     for ent in doc.ents:
         ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
-    for np in doc.noun_chunks:
-        while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
-            np = np[1:]
-        np.merge(np.root.tag_, np.text, np.root.ent_type_)
+
+    if noun_chunker:
+        for np in list(doc.noun_chunks):
+            while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
+                np = np[1:]
+            np.merge(np.root.tag_, np.text, np.root.ent_type_)
+
     strings = []
     for sent in doc.sents:
         if sent.text.strip():
@@ -128,29 +108,27 @@ def represent_word(word):
         tag = '?'
     return text + '|' + tag
 
-
 @plac.annotations(
-    in_loc=("Location of input file"),
-    out_dir=("Location of input file"),
+    in_loc=("Location of input directory or input file"),
+    out_dir=("Location of output directory"),
     n_workers=("Number of workers", "option", "n", int),
-    #load_parses=("Load parses from binary", "flag", "b"),
     n_threads=("Number of threads per process", "option", "t", int),
-    batch_size=("Number of texts to accumulate in a buffer", "option", "b", int)
+    batch_size=("Number of texts to accumulate in a buffer", "option", "b", int),
+    noun_chunker=("Flag if only noun chunks should be merged","flag","s")
 )
-def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000, load_parses=False):
+def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000,noun_chunker=False):
     if not path.exists(out_dir):
         path.join(out_dir)
-    #if load_parses:
-    #    jobs = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
-    #    do_work = load_and_transform
-    #else:
-    textfiles = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
-    if n_workers >= 2:
-        #jobs = partition(200000, textfiles)
-        do_work = parse_and_transform
-        parallelize(do_work, enumerate(textfiles), n_workers, [out_dir, n_threads, batch_size],backend='multiprocessing')
+    # if input is only one file, do single processing TODO: enable multiprocessing for single files
+    if path.isfile(in_loc):
+        parse_and_transform(0,in_loc,out_dir,n_threads=n_threads,batch_size=10000,noun_chunker=noun_chunker)
     else:
-        [parse_and_transform(0, file, out_dir, n_threads, batch_size) for file in textfiles]
+        textfiles = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
+        if n_workers >= 2:
+            do_work = parse_and_transform
+            parallelize(do_work, enumerate(textfiles), n_workers, [out_dir, n_threads, batch_size,noun_chunker],backend='multiprocessing')
+        else:
+            [parse_and_transform(0, file, out_dir, n_threads, batch_size, noun_chunker) for file in textfiles]
 
 
 if __name__ == '__main__':
