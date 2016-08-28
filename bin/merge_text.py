@@ -80,7 +80,7 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,noun_chun
         for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
             file_.write(transform_doc(doc,noun_chunker))
             tokens+=len(doc)
-    deltat=(time.time()-timer)/tokens
+    deltat=tokens/(time.time()-timer)
     print('tokenized, merged and wrote at {:2f} tok/sec'.format(deltat))
 
 def transform_doc(doc,noun_chunker):
