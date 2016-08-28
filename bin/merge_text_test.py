@@ -83,20 +83,17 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,spec_ents
         for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
             file_.write(transform_doc(doc,spec_ents_only))
 
-def transform_doc(doc,spec_ents_only):
-    if spec_ents_only:
-        print('spec_ents_only')
-        for ent in doc.ents:
-            if ent.label_ in LABELS.keys():
-                ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
-    else:
-        for ent in doc.ents:
-            ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
+def transform_doc(doc,noun_chunker):
 
-    for np in list(doc.noun_chunks):
-        while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
-            np = np[1:]
-        np.merge(np.root.tag_, np.text, np.root.ent_type_)
+    for ent in doc.ents:
+        ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
+
+    if noun_chunker:
+        for np in list(doc.noun_chunks):
+            while len(np) > 1 and np[0].dep_ not in ('advmod', 'amod', 'compound'):
+                np = np[1:]
+            np.merge(np.root.tag_, np.text, np.root.ent_type_)
+
     strings = []
     for sent in doc.sents:
         if sent.text.strip():
@@ -146,19 +143,19 @@ def represent_word(word):
     batch_size=("Number of texts to accumulate in a buffer", "option", "b", int),
     spec_ents_only=("Flag if only specific entities should be used","flag","s")
 )
-def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000,spec_ents_only=False):
+def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000,noun_chunker=False):
     if not path.exists(out_dir):
         path.join(out_dir)
     if path.isfile(in_loc):
-        parse_and_transform(0,in_loc,out_dir,n_threads=1,batch_size=10000,spec_ents_only=spec_ents_only)
+        parse_and_transform(0,in_loc,out_dir,n_threads=1,batch_size=10000,spec_ents_only=noun_chunker)
     else:
         textfiles = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
         if n_workers >= 2:
             #jobs = partition(200000, textfiles)
             do_work = parse_and_transform
-            parallelize(do_work, enumerate(textfiles), n_workers, [out_dir, n_threads, batch_size,spec_ents_only],backend='multiprocessing')
+            parallelize(do_work, enumerate(textfiles), n_workers, [out_dir, n_threads, batch_size,noun_chunker],backend='multiprocessing')
         else:
-            [parse_and_transform(0, file, out_dir, n_threads, batch_size, spec_ents_only) for file in textfiles]
+            [parse_and_transform(0, file, out_dir, n_threads, batch_size, noun_chunker) for file in textfiles]
 
 
 if __name__ == '__main__':
