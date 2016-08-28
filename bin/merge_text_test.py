@@ -85,6 +85,7 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,spec_ents
 
 def transform_doc(doc,spec_ents_only):
     if spec_ents_only:
+        print('spec_ents_only')
         for ent in doc.ents:
             if ent.label_ in LABELS.keys():
                 ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
