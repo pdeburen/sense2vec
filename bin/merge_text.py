@@ -106,10 +106,8 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,noun_chun
     print('tokenized, merged and wrote at {:2f} tok/sec'.format(deltat))
 
 def transform_doc(doc,noun_chunker):
-    print(LABELS.keys())
     for ent in doc.ents:
-        print(ent.text)
-        if ent.text in LABELS.keys():
+        if ent.label_ in LABELS.keys():
             ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
 
     if noun_chunker:
