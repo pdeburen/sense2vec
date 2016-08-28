@@ -68,7 +68,7 @@ def strip_meta(text):
     return text
 
 
-def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,spec_ents_only):
+def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,noun_chunker):
     out_loc = path.join(out_dir, os.path.split(input_)[1])
     if path.exists(out_loc):
         return None
@@ -81,7 +81,7 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,spec_ents
         #texts = strip_meta(infile_.read())
         texts = (text for text in texts if text.strip())
         for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
-            file_.write(transform_doc(doc,spec_ents_only))
+            file_.write(transform_doc(doc,noun_chunker))
 
 def transform_doc(doc,noun_chunker):
 
@@ -141,13 +141,13 @@ def represent_word(word):
     n_workers=("Number of workers", "option", "n", int),
     n_threads=("Number of threads per process", "option", "t", int),
     batch_size=("Number of texts to accumulate in a buffer", "option", "b", int),
-    spec_ents_only=("Flag if only specific entities should be used","flag","s")
+    noun_chunker=("Flag if only specific entities should be used","flag","s")
 )
 def main(in_loc, out_dir, n_workers=4, n_threads=1, batch_size=10000,noun_chunker=False):
     if not path.exists(out_dir):
         path.join(out_dir)
     if path.isfile(in_loc):
-        parse_and_transform(0,in_loc,out_dir,n_threads=1,batch_size=10000,spec_ents_only=noun_chunker)
+        parse_and_transform(0,in_loc,out_dir,n_threads=1,batch_size=10000,noun_chunker=noun_chunker)
     else:
         textfiles = [path.join(in_loc, fn) for fn in os.listdir(in_loc)]
         if n_workers >= 2:
