@@ -7,6 +7,7 @@ from __future__ import print_function, unicode_literals, division
 from os import path
 import os
 import re
+import time
 
 import spacy.en
 
@@ -71,12 +72,16 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,noun_chun
     print('Batch', batch_id)
     nlp = spacy.en.English()
     nlp.matcher = None
-
+    timer = time.time()
+    tokens = 0
     with open(out_loc, 'w', encoding='utf-8') as file_:
         texts = (strip_meta(text) for text in iter_lines(input_))
         texts = (text for text in texts if text.strip())
         for doc in nlp.pipe(texts, batch_size=batch_size, n_threads=n_threads):
             file_.write(transform_doc(doc,noun_chunker))
+            tokens+=len(doc)
+    deltat=(time.time()-timer)/tokens
+    print('tokenized, merged and wrote at %tok/sec'.format(deltat))
 
 def transform_doc(doc,noun_chunker):
 
