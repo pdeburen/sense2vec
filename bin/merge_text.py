@@ -20,6 +20,28 @@ except ImportError:
     import json
 
 
+#LABELS = {
+#    'ENT': 'ENT',
+#    'PERSON': 'ENT',
+#    'NORP': 'ENT',
+#    'FAC': 'ENT',
+#    'ORG': 'ENT',
+#    'GPE': 'ENT',
+#    'LOC': 'ENT',
+#    'LAW': 'ENT',
+#    'PRODUCT': 'ENT',
+#    'EVENT': 'ENT',
+#    'WORK_OF_ART': 'ENT',
+#    'LANGUAGE': 'ENT',
+#    'DATE': 'DATE',
+#    'TIME': 'TIME',
+#    'PERCENT': 'PERCENT',
+#    'MONEY': 'MONEY',
+#    'QUANTITY': 'QUANTITY',
+#    'ORDINAL': 'ORDINAL',
+#    'CARDINAL': 'CARDINAL'
+#}
+
 LABELS = {
     'ENT': 'ENT',
     'PERSON': 'ENT',
@@ -33,13 +55,13 @@ LABELS = {
     'EVENT': 'ENT',
     'WORK_OF_ART': 'ENT',
     'LANGUAGE': 'ENT',
-    'DATE': 'DATE',
-    'TIME': 'TIME',
-    'PERCENT': 'PERCENT',
-    'MONEY': 'MONEY',
-    'QUANTITY': 'QUANTITY',
-    'ORDINAL': 'ORDINAL',
-    'CARDINAL': 'CARDINAL'
+    #'DATE': 'DATE',
+    #'TIME': 'TIME',
+    #'PERCENT': 'PERCENT',
+    #'MONEY': 'MONEY',
+    #'QUANTITY': 'QUANTITY',
+    #'ORDINAL': 'ORDINAL',
+    #'CARDINAL': 'CARDINAL'
 }
 
 def parallelize(func, iterator, n_jobs, extra, backend='multiprocessing'):
@@ -86,7 +108,8 @@ def parse_and_transform(batch_id, input_, out_dir,n_threads,batch_size,noun_chun
 def transform_doc(doc,noun_chunker):
 
     for ent in doc.ents:
-        ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
+        if ent in LABELS.keys():
+            ent.merge(ent.root.tag_, ent.text, LABELS[ent.label_])
 
     if noun_chunker:
         for np in list(doc.noun_chunks):
